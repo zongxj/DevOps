@@ -1,3 +1,5 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib import auth
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -5,6 +7,7 @@ from django.views import generic
 # from django.http import HttpResponse
 # from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
 from .models import Question, Choice
 # Create your views here.
 
@@ -77,3 +80,28 @@ def vote(request, question_id):
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
         return HttpResponseRedirect(reverse('cmdb:results', args=(question.id,)))
+
+
+@login_required
+def index(request):
+    # total_idc =Idc.objects.aggregate(Count('idc_name'))
+    # idc_num = total_idc["idc_name__count"]
+    # total_host = HostList.objects.aggregate(Count('hostname'))
+    # host_num = total_host["hostname__count"]
+    return render(request, 'cmdb/index.html', locals())
+
+
+def login(request):
+    return render(request, 'cmdb/login.html', locals())
+
+
+@csrf_exempt
+def authin(request):
+    username = request.POST.get('username', '')
+    password = request.POST.get('password', '')
+    user = auth.authenticate(username=username, password=password)
+    if user is not None:
+            auth.login(request, user)
+            return render(request, 'cmdb/index.html', {'login_user': request.user})
+    else:
+            return render(request, 'cmdb/login.html', {'login_err': 'Wrong username or password'})
